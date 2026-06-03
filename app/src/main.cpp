@@ -96,8 +96,10 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 
+class Dummy {};
+
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS 1000
+#define SLEEP_TIME_MS 500
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
