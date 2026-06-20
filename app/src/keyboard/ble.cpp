@@ -5,6 +5,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/kernel.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/usb/class/hid.h>
 
@@ -43,11 +44,22 @@ static const struct bt_data sd[] = {
           sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
+static bool should_retry_advertising(int err) {
+  return err == -EAGAIN || err == -ENOMEM;
+}
+
+static void schedule_advertising_retry(int err) {
+  printk("BLE advertising retry scheduled (err %d)\n", err);
+  k_work_reschedule(&adv_restart_work, K_MSEC(250));
+}
+
 static void start_advertising(void) {
   int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), sd,
                             ARRAY_SIZE(sd));
   if (err == 0) {
     printk("BLE advertising started\n");
+  } else if (should_retry_advertising(err)) {
+    schedule_advertising_retry(err);
   } else {
     printk("BLE advertising failed (err %d)\n", err);
   }
@@ -64,9 +76,8 @@ static void restart_advertising(struct k_work *work) {
     return;
   }
 
-  if (err == -ENOMEM) {
-    printk("BLE advertising retry scheduled (err %d)\n", err);
-    k_work_reschedule(&adv_restart_work, K_MSEC(250));
+  if (should_retry_advertising(err)) {
+    schedule_advertising_retry(err);
     return;
   }
 
@@ -101,6 +112,14 @@ static void bt_ready(int err) {
   if (err != 0) {
     printk("BLE init failed (err %d)\n", err);
     return;
+  }
+
+  if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+    err = settings_load();
+    if (err != 0) {
+      printk("BLE settings load failed (err %d)\n", err);
+      return;
+    }
   }
 
   g_bt_ready = true;

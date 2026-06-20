@@ -1,6 +1,7 @@
 / {
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
+		zephyr,code-partition = &code_partition;
 	};
 
 	hid_dev_0: hid_dev_0 {
@@ -46,6 +47,38 @@
 		main-btn = &main_btn;
 		bkg-led = &bkg_led;
 		key-led = &key_led;
+	};
+};
+
+&flash0 {
+	/delete-node/ partitions;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reserved_partition_0: partition@0 {
+			label = "MBR";
+			read-only;
+			reg = <0x00000000 0x00001000>;
+		};
+
+		code_partition: partition@1000 {
+			label = "Application";
+			reg = <0x00001000 0x000eb000>;
+		};
+
+		storage_partition: partition@ec000 {
+			label = "Storage";
+			reg = <0x000ec000 0x00008000>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "UF2";
+			read-only;
+			reg = <0x000f4000 0x0000c000>;
+		};
 	};
 };
 
