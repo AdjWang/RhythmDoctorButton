@@ -13,7 +13,12 @@ uv run west packages pip | xargs uv pip install
 ## Build
 
 ```
-west build -p always -b nrf52840dk/nrf52840 app
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=main
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=uart
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=pwm_led
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=adc
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=usb
+west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=ble
 ```
 
 ## Flash program

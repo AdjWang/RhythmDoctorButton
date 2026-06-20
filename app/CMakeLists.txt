@@ -2,15 +2,36 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(RhythmDoctorButton)
 
-target_sources(app PRIVATE
-  src/main.cpp
-  src/battery_adc.cpp
-  src/button.cpp
-  src/light.cpp
-  src/keyboard/ble.cpp
-  src/keyboard/ble_hid.c
-  src/keyboard/usb.cpp
-)
+set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, pwm_led, adc, usb, ble")
+
+if(APP_BIN STREQUAL "main")
+  target_sources(app PRIVATE
+    src/main.cpp
+    src/battery_adc.cpp
+    src/button.cpp
+    src/light.cpp
+    src/keyboard/ble.cpp
+    src/keyboard/ble_hid.c
+    src/keyboard/usb.cpp
+  )
+elseif(APP_BIN STREQUAL "uart")
+  target_sources(app PRIVATE src/bin/uart.cpp)
+elseif(APP_BIN STREQUAL "pwm_led")
+  target_sources(app PRIVATE src/bin/pwm_led.cpp src/light.cpp)
+elseif(APP_BIN STREQUAL "adc")
+  target_sources(app PRIVATE src/bin/adc.cpp src/battery_adc.cpp)
+elseif(APP_BIN STREQUAL "usb")
+  target_sources(app PRIVATE src/bin/usb.cpp src/keyboard/usb.cpp)
+elseif(APP_BIN STREQUAL "ble")
+  target_sources(app PRIVATE
+    src/bin/ble.cpp
+    src/keyboard/ble.cpp
+    src/keyboard/ble_hid.c
+  )
+else()
+  message(FATAL_ERROR "Unknown APP_BIN='${APP_BIN}'")
+endif()
+
 target_include_directories(app PRIVATE
   src
 )
