@@ -159,7 +159,14 @@ usbd_context* SetupUsbDevice() {
   if (ret != 0) {
     return nullptr;
   }
-  usbd_msg_register_cb(&rdb_usbd, UsbMessageCallback);
+  ret = usbd_msg_register_cb(&rdb_usbd, UsbMessageCallback);
+  if (ret != 0) {
+    return nullptr;
+  }
+  ret = usbd_init(&rdb_usbd);
+  if (ret != 0) {
+    return nullptr;
+  }
   return &rdb_usbd;
 }
 

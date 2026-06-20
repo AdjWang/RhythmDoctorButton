@@ -1,4 +1,8 @@
 / {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+	};
+
 	hid_dev_0: hid_dev_0 {
 		compatible = "zephyr,hid-device";
 		label = "HID0";
@@ -42,6 +46,12 @@
 		main-btn = &main_btn;
 		bkg-led = &bkg_led;
 		key-led = &key_led;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
 	};
 };
 
