@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, pwm_led, adc, usb, ble")
+set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, pwm_led, adc, usb, ble, key")
 
-if(APP_BIN STREQUAL "uart")
+if(NOT APP_BIN STREQUAL "main" AND NOT APP_BIN STREQUAL "usb")
   set(CONF_FILE
     prj.conf
     src/bin/uart.conf
@@ -26,6 +26,12 @@ elseif(APP_BIN STREQUAL "uart")
   target_sources(app PRIVATE src/bin/test_uart.cpp)
 elseif(APP_BIN STREQUAL "pwm_led")
   target_sources(app PRIVATE src/bin/test_pwm_led.cpp src/light.cpp)
+elseif(APP_BIN STREQUAL "key")
+  target_sources(app PRIVATE
+    src/bin/test_key.cpp
+    src/button.cpp
+    src/light.cpp
+  )
 elseif(APP_BIN STREQUAL "adc")
   target_sources(app PRIVATE src/bin/test_adc.cpp src/battery_adc.cpp)
 elseif(APP_BIN STREQUAL "usb")
