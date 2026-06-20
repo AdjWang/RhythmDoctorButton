@@ -29,6 +29,23 @@ cp build/zephyr/zephyr.uf2 /media/$USER/NICENANO/
 
 ## Flash bootloader
 
+The factory bootloader currently reports:
+
+```
+UF2 Bootloader 0.6.0
+Model: nice!nano
+Board-ID: nRF52840-nicenano
+SoftDevice: not found
+Date: Jun 19 2021
+```
+
+Normal UF2 flashing does not use the bootloader file in `scripts/`. Because
+this factory bootloader reports `SoftDevice: not found`, the app is linked with
+`CONFIG_FLASH_LOAD_OFFSET=0x1000`.
+
+Only run these commands when intentionally replacing or recovering the
+bootloader:
+
 ```
 nrfutil device recover
 nrfutil device program --firmware ./scripts/nice_nano_bootloader-0.6.0_s140_6.1.1.hex

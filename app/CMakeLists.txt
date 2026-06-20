@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 3.20.0)
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(RhythmDoctorButton)
 
 set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, pwm_led, adc, usb, ble")
+
+if(APP_BIN STREQUAL "uart")
+  set(CONF_FILE
+    prj.conf
+    src/bin/uart.conf
+  )
+endif()
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(RhythmDoctorButton)
 
 if(APP_BIN STREQUAL "main")
   target_sources(app PRIVATE
