@@ -23,16 +23,16 @@ if(APP_BIN STREQUAL "main")
     src/keyboard/usb.cpp
   )
 elseif(APP_BIN STREQUAL "uart")
-  target_sources(app PRIVATE src/bin/uart.cpp)
+  target_sources(app PRIVATE src/bin/test_uart.cpp)
 elseif(APP_BIN STREQUAL "pwm_led")
-  target_sources(app PRIVATE src/bin/pwm_led.cpp src/light.cpp)
+  target_sources(app PRIVATE src/bin/test_pwm_led.cpp src/light.cpp)
 elseif(APP_BIN STREQUAL "adc")
-  target_sources(app PRIVATE src/bin/adc.cpp src/battery_adc.cpp)
+  target_sources(app PRIVATE src/bin/test_adc.cpp src/battery_adc.cpp)
 elseif(APP_BIN STREQUAL "usb")
-  target_sources(app PRIVATE src/bin/usb.cpp src/keyboard/usb.cpp)
+  target_sources(app PRIVATE src/bin/test_usb.cpp src/keyboard/usb.cpp)
 elseif(APP_BIN STREQUAL "ble")
   target_sources(app PRIVATE
-    src/bin/ble.cpp
+    src/bin/test_ble.cpp
     src/keyboard/ble.cpp
     src/keyboard/ble_hid.c
   )
