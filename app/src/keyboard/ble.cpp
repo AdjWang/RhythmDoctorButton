@@ -3,8 +3,10 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/usb/class/hid.h>
 
 extern "C" {
 #include "keyboard/ble_hid.h"
@@ -16,7 +18,11 @@ namespace {
 
 hids_report_kb_t make_report(uint8_t key) {
   hids_report_kb_t report = {0};
-  report.key_pressed[0] = key;
+  if (key == ' ') {
+    report.key_pressed[0] = HID_KEY_SPACE;
+  } else {
+    report.key_pressed[0] = key;
+  }
   return report;
 }
 
@@ -176,6 +182,7 @@ void BleKeyboardImpl::ReleaseAll() {
 
 void BleKeyboardImpl::SetBatteryLevel(uint8_t level) {
   battery_level_ = level;
+  (void)bt_bas_set_battery_level(level);
 }
 
 BleKeyboard::BleKeyboard(std::string_view device_name,

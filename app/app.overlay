@@ -1,0 +1,103 @@
+/ {
+	hid_dev_0: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		label = "HID0";
+		protocol-code = "keyboard";
+		in-report-size = <8>;
+		in-polling-period-us = <1000>;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		boot_btn: boot_btn {
+			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+			label = "Boot button";
+		};
+
+		main_btn: main_btn {
+			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+			label = "Main button";
+		};
+	};
+
+	zephyr,user {
+		io-channels = <&adc 2>;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		bkg_led: bkg_led {
+			pwms = <&pwm0 0 PWM_USEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		key_led: key_led {
+			pwms = <&pwm1 0 PWM_USEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		boot-btn = &boot_btn;
+		main-btn = &main_btn;
+		bkg-led = &bkg_led;
+		key-led = &key_led;
+	};
+};
+
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 2)>;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 2)>;
+			low-power-enable;
+		};
+	};
+
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 12)>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 12)>;
+			low-power-enable;
+		};
+	};
+};

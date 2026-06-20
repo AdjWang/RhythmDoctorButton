@@ -1,108 +1,191 @@
-#include "device/usbd.h"
 #include "keyboard/keyboard.h"
 
 #include <array>
-#include <cstdio>
-#include <cstring>
+#include <cstdint>
 #include <memory>
 
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_mac.h"
-#include "tinyusb.h"
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/usb/class/hid.h>
+#include <zephyr/usb/class/usbd_hid.h>
+#include <zephyr/usb/usbd.h>
+
+namespace {
+
+constexpr uint16_t kUsbVid = 0x303A;
+constexpr uint16_t kUsbPid = 0x4001;
+constexpr uint8_t kUsbMaxPower = 100 / 2;
+constexpr uint8_t kKeyboardReportSize = 8;
+
+enum ReportIndex {
+  kModifierIndex = 0,
+  kReservedIndex = 1,
+  kKeycodeStartIndex = 2,
+};
+
+struct KeyMapping {
+  uint8_t modifier;
+  uint8_t keycode;
+};
+
+USBD_DEVICE_DEFINE(rdb_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), kUsbVid,
+                   kUsbPid);
+USBD_DESC_LANG_DEFINE(rdb_lang);
+USBD_DESC_MANUFACTURER_DEFINE(rdb_mfr, "TeamIO");
+USBD_DESC_PRODUCT_DEFINE(rdb_product, "RhythmDoctorButton");
+USBD_DESC_CONFIG_DEFINE(rdb_fs_desc, "FS Configuration");
+USBD_CONFIGURATION_DEFINE(rdb_fs_config, USB_SCD_REMOTE_WAKEUP, kUsbMaxPower,
+                          &rdb_fs_desc);
+
+const uint8_t kHidKeyboardReportDescriptor[] = HID_KEYBOARD_REPORT_DESC();
+bool g_hid_ready = false;
+uint32_t g_idle_duration = 0;
+
+KeyMapping MapAsciiToKey(uint8_t key) {
+  if (key >= 'a' && key <= 'z') {
+    return {HID_KBD_MODIFIER_NONE,
+            static_cast<uint8_t>(HID_KEY_A + (key - 'a'))};
+  }
+  if (key >= 'A' && key <= 'Z') {
+    return {HID_KBD_MODIFIER_LEFT_SHIFT,
+            static_cast<uint8_t>(HID_KEY_A + (key - 'A'))};
+  }
+  if (key >= '1' && key <= '9') {
+    return {HID_KBD_MODIFIER_NONE,
+            static_cast<uint8_t>(HID_KEY_1 + (key - '1'))};
+  }
+  if (key == '0') {
+    return {HID_KBD_MODIFIER_NONE, HID_KEY_0};
+  }
+  if (key == ' ') {
+    return {HID_KBD_MODIFIER_NONE, HID_KEY_SPACE};
+  }
+  if (key == '\n' || key == '\r') {
+    return {HID_KBD_MODIFIER_NONE, HID_KEY_ENTER};
+  }
+
+  return {HID_KBD_MODIFIER_NONE, 0};
+}
+
+void HidInterfaceReady(const device* dev, bool ready) {
+  printk("USB HID %s is %s\n", dev->name, ready ? "ready" : "not ready");
+  g_hid_ready = ready;
+}
+
+int HidGetReport(const device* dev, uint8_t type, uint8_t id, uint16_t len,
+                 uint8_t* const buf) {
+  ARG_UNUSED(dev);
+  ARG_UNUSED(type);
+  ARG_UNUSED(id);
+  ARG_UNUSED(len);
+  ARG_UNUSED(buf);
+  return 0;
+}
+
+int HidSetReport(const device* dev, uint8_t type, uint8_t id, uint16_t len,
+                 const uint8_t* const buf) {
+  ARG_UNUSED(dev);
+  ARG_UNUSED(id);
+  ARG_UNUSED(len);
+  ARG_UNUSED(buf);
+  return type == HID_REPORT_TYPE_OUTPUT ? 0 : -ENOTSUP;
+}
+
+void HidSetIdle(const device* dev, uint8_t id, uint32_t duration) {
+  ARG_UNUSED(dev);
+  ARG_UNUSED(id);
+  g_idle_duration = duration;
+}
+
+uint32_t HidGetIdle(const device* dev, uint8_t id) {
+  ARG_UNUSED(dev);
+  ARG_UNUSED(id);
+  return g_idle_duration;
+}
+
+void HidSetProtocol(const device* dev, uint8_t proto) {
+  ARG_UNUSED(dev);
+  ARG_UNUSED(proto);
+}
+
+void HidOutputReport(const device* dev, uint16_t len, const uint8_t* const buf) {
+  (void)HidSetReport(dev, HID_REPORT_TYPE_OUTPUT, 0, len, buf);
+}
+
+const hid_device_ops kHidOps = {
+    .iface_ready = HidInterfaceReady,
+    .get_report = HidGetReport,
+    .set_report = HidSetReport,
+    .set_idle = HidSetIdle,
+    .get_idle = HidGetIdle,
+    .set_protocol = HidSetProtocol,
+    .output_report = HidOutputReport,
+};
+
+void UsbMessageCallback(usbd_context* const usbd_ctx, const usbd_msg* const msg) {
+  if (usbd_can_detect_vbus(usbd_ctx)) {
+    if (msg->type == USBD_MSG_VBUS_READY) {
+      if (usbd_enable(usbd_ctx) != 0) {
+        printk("Failed to enable USB device\n");
+      }
+    }
+    if (msg->type == USBD_MSG_VBUS_REMOVED) {
+      if (usbd_disable(usbd_ctx) != 0) {
+        printk("Failed to disable USB device\n");
+      }
+    }
+  }
+}
+
+usbd_context* SetupUsbDevice() {
+  int ret = usbd_add_descriptor(&rdb_usbd, &rdb_lang);
+  if (ret != 0) {
+    return nullptr;
+  }
+  ret = usbd_add_descriptor(&rdb_usbd, &rdb_mfr);
+  if (ret != 0) {
+    return nullptr;
+  }
+  ret = usbd_add_descriptor(&rdb_usbd, &rdb_product);
+  if (ret != 0) {
+    return nullptr;
+  }
+  ret = usbd_add_configuration(&rdb_usbd, USBD_SPEED_FS, &rdb_fs_config);
+  if (ret != 0) {
+    return nullptr;
+  }
+  ret = usbd_register_all_classes(&rdb_usbd, USBD_SPEED_FS, 1, nullptr);
+  if (ret != 0) {
+    return nullptr;
+  }
+  usbd_msg_register_cb(&rdb_usbd, UsbMessageCallback);
+  return &rdb_usbd;
+}
+
+}  // namespace
 
 namespace rdb {
-
-namespace {
-static const char* TAG = "USB";
-static const char kStringLangId[] = {0x09, 0x04};
-static char kSerialString[13] = "000000000000";
-static const char* kStringDescriptors[] = {
-    kStringLangId,  // LANGID
-    nullptr,        // manufacturer name
-    nullptr,        // device name
-    kSerialString,  // serial number string
-};
-
-static void PopulateDevInfo(const char* device_name,
-                            const char* device_manufacturer) {
-  kStringDescriptors[1] = device_manufacturer;
-  kStringDescriptors[2] = device_name;
-}
-
-static void PopulateUsbSerialString() {
-  uint8_t mac[6] = {0};
-  if (esp_read_mac(mac, ESP_MAC_EFUSE_FACTORY) != ESP_OK) {
-    ESP_LOGW(TAG, "Failed to read efuse MAC for USB serial");
-    return;
-  }
-  snprintf(kSerialString, sizeof(kSerialString), "%02X%02X%02X%02X%02X%02X",
-           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
-
-enum {
-  ITF_NUM_KEYBOARD = 0,
-  ITF_NUM_TOTAL = 1,
-};
-
-#define CONFIG_TOTAL_LEN  (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN)
-
-static const tusb_desc_device_t kDeviceDescriptor = {
-    .bLength = sizeof(tusb_desc_device_t),
-    .bDescriptorType = TUSB_DESC_DEVICE,
-    .bcdUSB = 0x0200,
-    .bDeviceClass = 0x00,
-    .bDeviceSubClass = 0x00,
-    .bDeviceProtocol = 0x00,
-    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
-    .idVendor = 0x303A,
-    .idProduct = 0x4001,
-    .bcdDevice = 0x0100,
-    .iManufacturer = 0x01,
-    .iProduct = 0x02,
-    .iSerialNumber = 0x03,
-    .bNumConfigurations = 0x01,
-};
-
-static const uint8_t kAsciiToKeycode[128][2] = {HID_ASCII_TO_KEYCODE};
-
-}  // namespace
-
-// HID Report Descriptor - declared at namespace scope for access in callbacks
-static const uint8_t kHidKeyboardReportDescriptor[] = {
-    TUD_HID_REPORT_DESC_KEYBOARD()
-};
-
-namespace {
-
-static const uint8_t kConfigurationDescriptor[] = {
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
-                          TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-    TUD_HID_DESCRIPTOR(ITF_NUM_KEYBOARD, 0, HID_ITF_PROTOCOL_KEYBOARD,
-                       sizeof(kHidKeyboardReportDescriptor), 0x81,
-                       CFG_TUD_HID_EP_BUFSIZE, 10),
-};
-
-}  // namespace
 
 class UsbKeyboardImpl : public IKeyboard {
  public:
   UsbKeyboardImpl(std::string_view device_name,
                   std::string_view device_manufacturer);
-  ~UsbKeyboardImpl() override;
+  ~UsbKeyboardImpl() override = default;
+
   bool is_connected() const override;
   void Begin() override;
   void End() override;
   void Press(uint8_t key) override;
   void Release(uint8_t key) override;
   void ReleaseAll() override;
-  void SetBatteryLevel(uint8_t /*lvl*/) override;
+  void SetBatteryLevel(uint8_t level) override;
 
  private:
-  const std::string device_name_;
-  const std::string device_manufacturer_;
-  bool installed_ = false;
-  std::array<uint8_t, 6> keycodes_{};
+  bool initialized_ = false;
+  const device* hid_dev_ = nullptr;
+  usbd_context* usbd_ctx_ = nullptr;
+  std::array<uint8_t, kKeyboardReportSize> report_{};
 
   void SendReport();
   void AddKeycode(uint8_t keycode);
@@ -110,215 +193,144 @@ class UsbKeyboardImpl : public IKeyboard {
 };
 
 UsbKeyboardImpl::UsbKeyboardImpl(std::string_view device_name,
-                                 std::string_view device_manufacturer)
-    : device_name_(device_name), device_manufacturer_(device_manufacturer) {}
-
-UsbKeyboardImpl::~UsbKeyboardImpl() {
-  End();
+                                 std::string_view device_manufacturer) {
+  ARG_UNUSED(device_name);
+  ARG_UNUSED(device_manufacturer);
 }
 
-bool UsbKeyboardImpl::is_connected() const {
-  return installed_ && tud_ready();
-}
+bool UsbKeyboardImpl::is_connected() const { return initialized_ && g_hid_ready; }
 
 void UsbKeyboardImpl::Begin() {
-  if (installed_) {
+  if (initialized_) {
     return;
   }
-  PopulateDevInfo(device_name_.c_str(), device_manufacturer_.c_str());
-  PopulateUsbSerialString();
-  ESP_LOGI(TAG, "Descriptor manufacturer=%s", kStringDescriptors[1]);
-  ESP_LOGI(TAG, "Descriptor product=%s", kStringDescriptors[2]);
-  ESP_LOGI(TAG, "Descriptor serial=%s", kStringDescriptors[3]);
-  tinyusb_config_t config = {};
-  config.port = TINYUSB_PORT_FULL_SPEED_0;
-  config.phy.skip_setup = false;
-  config.phy.self_powered = false;
-  config.phy.vbus_monitor_io = -1;
-  config.task.size = 8192;
-  config.task.priority = 5;
-  config.task.xCoreID = 0;
-  config.descriptor.device = &kDeviceDescriptor;
-  config.descriptor.qualifier = nullptr;
-  config.descriptor.string = kStringDescriptors;
-  config.descriptor.string_count = sizeof(kStringDescriptors) / sizeof(kStringDescriptors[0]);
-  config.descriptor.full_speed_config = kConfigurationDescriptor;
-  config.descriptor.high_speed_config = nullptr;
-  esp_err_t err = tinyusb_driver_install(&config);
-  installed_ = (err == ESP_OK);
-  if (!installed_) {
-    ESP_LOGE(TAG, "TinyUSB driver install failed: %d", err);
+
+  hid_dev_ = DEVICE_DT_GET_ONE(zephyr_hid_device);
+  if (!device_is_ready(hid_dev_)) {
+    printk("USB HID device is not ready\n");
+    return;
   }
+
+  int ret = hid_device_register(hid_dev_, kHidKeyboardReportDescriptor,
+                                sizeof(kHidKeyboardReportDescriptor), &kHidOps);
+  if (ret != 0) {
+    printk("Failed to register USB HID device (%d)\n", ret);
+    return;
+  }
+
+  usbd_ctx_ = SetupUsbDevice();
+  if (usbd_ctx_ == nullptr) {
+    printk("Failed to set up USB device\n");
+    return;
+  }
+
+  if (!usbd_can_detect_vbus(usbd_ctx_)) {
+    ret = usbd_enable(usbd_ctx_);
+    if (ret != 0) {
+      printk("Failed to enable USB device (%d)\n", ret);
+      return;
+    }
+  }
+
+  initialized_ = true;
 }
 
 void UsbKeyboardImpl::End() {
-  if (!installed_) {
+  if (!initialized_) {
     return;
   }
 
-  esp_err_t err = tinyusb_driver_uninstall();
-  if (err != ESP_OK) {
-    ESP_LOGW(TAG, "TinyUSB driver uninstall failed: %d", err);
+  if (usbd_ctx_ != nullptr) {
+    (void)usbd_disable(usbd_ctx_);
   }
-  installed_ = false;
-  keycodes_.fill(0);
+  initialized_ = false;
+  g_hid_ready = false;
+  report_.fill(0);
 }
 
 void UsbKeyboardImpl::AddKeycode(uint8_t keycode) {
   if (keycode == 0) {
     return;
   }
-  for (uint8_t current : keycodes_) {
+  for (const uint8_t current : report_) {
     if (current == keycode) {
       return;
     }
   }
-  for (uint8_t &slot : keycodes_) {
-    if (slot == 0) {
-      slot = keycode;
+  for (size_t i = kKeycodeStartIndex; i < report_.size(); ++i) {
+    if (report_[i] == 0) {
+      report_[i] = keycode;
       return;
     }
   }
 }
 
 void UsbKeyboardImpl::RemoveKeycode(uint8_t keycode) {
-  for (uint8_t &slot : keycodes_) {
-    if (slot == keycode) {
-      slot = 0;
+  for (size_t i = kKeycodeStartIndex; i < report_.size(); ++i) {
+    if (report_[i] == keycode) {
+      report_[i] = 0;
       return;
     }
   }
 }
 
 void UsbKeyboardImpl::SendReport() {
-  if (!installed_ || !tud_hid_ready()) {
+  if (!is_connected()) {
     return;
   }
-  tud_hid_keyboard_report(0, 0, keycodes_.data());
+
+  const int ret =
+      hid_device_submit_report(hid_dev_, report_.size(), report_.data());
+  if (ret != 0) {
+    printk("Failed to submit USB HID report (%d)\n", ret);
+  }
 }
 
 void UsbKeyboardImpl::Press(uint8_t key) {
-  if (!installed_) {
+  const KeyMapping mapping = MapAsciiToKey(key);
+  if (mapping.keycode == 0) {
     return;
   }
 
-  if (key >= sizeof(kAsciiToKeycode) / sizeof(kAsciiToKeycode[0])) {
-    return;
-  }
-
-  uint8_t modifier = kAsciiToKeycode[key][0] ? KEYBOARD_MODIFIER_LEFTSHIFT : 0;
-  uint8_t keycode = kAsciiToKeycode[key][1];
-  if (keycode == 0) {
-    return;
-  }
-
-  AddKeycode(keycode);
-  if (modifier != 0) {
-    // Keep the report simple, only single modifier supported.
-    tud_hid_keyboard_report(0, modifier, keycodes_.data());
-  } else {
-    SendReport();
-  }
+  report_[kModifierIndex] = mapping.modifier;
+  report_[kReservedIndex] = 0;
+  AddKeycode(mapping.keycode);
+  SendReport();
 }
 
 void UsbKeyboardImpl::Release(uint8_t key) {
-  if (!installed_) {
+  const KeyMapping mapping = MapAsciiToKey(key);
+  if (mapping.keycode == 0) {
     return;
   }
 
-  if (key >= sizeof(kAsciiToKeycode) / sizeof(kAsciiToKeycode[0])) {
-    return;
-  }
-
-  uint8_t keycode = kAsciiToKeycode[key][1];
-  if (keycode == 0) {
-    return;
-  }
-
-  RemoveKeycode(keycode);
+  report_[kModifierIndex] = HID_KBD_MODIFIER_NONE;
+  RemoveKeycode(mapping.keycode);
   SendReport();
 }
 
 void UsbKeyboardImpl::ReleaseAll() {
-  if (!installed_) {
-    return;
-  }
-
-  keycodes_.fill(0);
+  report_.fill(0);
   SendReport();
 }
 
-void UsbKeyboardImpl::SetBatteryLevel(uint8_t /*lvl*/) {
-  // No battery service implemented for USB HID.
-}
+void UsbKeyboardImpl::SetBatteryLevel(uint8_t level) { ARG_UNUSED(level); }
 
 UsbKeyboard::UsbKeyboard(std::string_view device_name,
                          std::string_view device_manufacturer)
     : impl_(std::make_unique<UsbKeyboardImpl>(device_name,
                                               device_manufacturer)) {}
-UsbKeyboard::~UsbKeyboard() {}
+
+UsbKeyboard::~UsbKeyboard() = default;
+
 bool UsbKeyboard::is_connected() const { return impl_->is_connected(); }
 void UsbKeyboard::Begin() { impl_->Begin(); }
 void UsbKeyboard::End() { impl_->End(); }
 void UsbKeyboard::Press(uint8_t key) { impl_->Press(key); }
 void UsbKeyboard::Release(uint8_t key) { impl_->Release(key); }
 void UsbKeyboard::ReleaseAll() { impl_->ReleaseAll(); }
-void UsbKeyboard::SetBatteryLevel(uint8_t lvl) { impl_->SetBatteryLevel(lvl); }
+void UsbKeyboard::SetBatteryLevel(uint8_t level) {
+  impl_->SetBatteryLevel(level);
+}
 
 }  // namespace rdb
-
-// HID Report Descriptor - declared at global scope for access in C callbacks
-static const uint8_t kHidKeyboardReportDescriptor[] = {
-    TUD_HID_REPORT_DESC_KEYBOARD()
-};
-
-// TinyUSB HID Callbacks (must have C linkage)
-extern "C" {
-
-// Invoked when received GET_REPORT control request
-// Application must fill buffer report's content and return its length.
-uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id,
-                                hid_report_type_t report_type, uint8_t* buffer,
-                                uint16_t reqlen) {
-  (void)instance;
-  (void)report_id;
-  (void)report_type;
-  (void)buffer;
-  (void)reqlen;
-
-  // For keyboard, we don't typically respond to GET_REPORT for output reports
-  // Just return 0 as we don't have state to report
-  return 0;
-}
-
-// Invoked when received SET_REPORT control request or
-// received data on OUT endpoint ( Report ID = 0, Type = 0 )
-void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id,
-                            hid_report_type_t report_type, uint8_t const* buffer,
-                            uint16_t bufsize) {
-  (void)instance;
-  (void)report_id;
-  (void)bufsize;
-
-  // For keyboard set_report typically contains LED state (Caps Lock, Num Lock, Scroll Lock)
-  if (report_type == HID_REPORT_TYPE_OUTPUT) {
-    // buffer[0] contains LED state
-    // bit 0: Num Lock
-    // bit 1: Caps Lock
-    // bit 2: Scroll Lock
-    if (bufsize > 0) {
-      // Here you could handle LED state if needed
-      // For now, we just acknowledge receipt
-    }
-  }
-}
-
-// Invoked when received GET_REPORT control request
-// Application must fill buffer report's content and return its length.
-uint8_t const* tud_hid_descriptor_report_cb(uint8_t instance) {
-  (void)instance;
-
-  return kHidKeyboardReportDescriptor;
-}
-
-}  // extern "C"
