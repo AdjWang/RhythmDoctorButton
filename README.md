@@ -16,8 +16,21 @@ uv run west packages pip | xargs uv pip install
 west build -p always -b nrf52840dk/nrf52840 app
 ```
 
-## Flash
+## Flash program
 
 ```
 cp build/zephyr/zephyr.uf2 /media/$USER/NICENANO/
 ```
+
+## Flash bootloader
+
+```
+nrfutil device recover
+nrfutil device program --firmware ./scripts/nice_nano_bootloader-0.6.0_s140_6.1.1.hex
+```
+
+> Install [nrfutil](https://www.nordicsemi.com/Products/Development-tools/nRF-Util/Download)
+
+> Install tools: `nrfutil install device`
+
+> List jlink devices: `nrfutil device list`
