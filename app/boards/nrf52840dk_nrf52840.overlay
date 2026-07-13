@@ -64,9 +64,15 @@
 			reg = <0x00000000 0x00001000>;
 		};
 
-		code_partition: partition@1000 {
+		softdevice_partition: partition@1000 {
+			label = "SoftDevice";
+			read-only;
+			reg = <0x00001000 0x00025000>;
+		};
+
+		code_partition: partition@26000 {
 			label = "Application";
-			reg = <0x00001000 0x000eb000>;
+			reg = <0x00026000 0x000c6000>;
 		};
 
 		storage_partition: partition@ec000 {

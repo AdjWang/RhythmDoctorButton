@@ -103,9 +103,21 @@ static void disconnected(struct bt_conn *conn, uint8_t reason) {
   k_work_schedule(&adv_restart_work, K_MSEC(250));
 }
 
+static void security_changed(struct bt_conn *conn, bt_security_t level,
+                             enum bt_security_err err) {
+  ARG_UNUSED(conn);
+  if (err != BT_SECURITY_ERR_SUCCESS) {
+    printk("BLE security failed (level %u, err %u)\n", level, err);
+    return;
+  }
+
+  printk("BLE security changed (level %u)\n", level);
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
   .connected = connected,
   .disconnected = disconnected,
+  .security_changed = security_changed,
 };
 
 static void bt_ready(int err) {
