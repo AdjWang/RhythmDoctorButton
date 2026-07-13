@@ -59,5 +59,5 @@ nrfutil device program --firmware ./scripts/nice_nano_bootloader-0.6.0_s140_6.1.
 > List jlink devices: `nrfutil device list` -->
 
 ```
-pyocd flash -t nrf52840 -f 1M -e chip --format hex scripts/nice_nano_bootloader-0.6.0_s140_6.1.1.hex
+pyocd flash -t nrf52840 -f 1M -e chip --format hex scripts/nice_nano_bootloader-0.11.0_s140_6.1.1.hex
 ```
