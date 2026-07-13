@@ -1,7 +1,6 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/usb/usb_device.h>
 
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console),
                                 zephyr_cdc_acm_uart),
@@ -10,10 +9,6 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console),
 int main() {
   const device* const console = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
   if (!device_is_ready(console)) {
-    return 0;
-  }
-
-  if (usb_enable(nullptr) != 0) {
     return 0;
   }
 
