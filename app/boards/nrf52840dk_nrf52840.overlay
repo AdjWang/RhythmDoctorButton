@@ -2,7 +2,7 @@
 
 / {
 	chosen {
-		zephyr,console = &cdc_acm_uart0;
+		zephyr,console = &uart_cdc;
 		zephyr,code-partition = &code_partition;
 		zephyr,settings-partition = &storage_partition;
 	};
@@ -97,7 +97,7 @@
 };
 
 &zephyr_udc0 {
-	cdc_acm_uart0: cdc_acm_uart0 {
+	uart_cdc: uart_cdc {
 		compatible = "zephyr,cdc-acm-uart";
 	};
 };

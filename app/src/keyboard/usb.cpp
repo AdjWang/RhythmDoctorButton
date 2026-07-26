@@ -1,4 +1,5 @@
 #include "keyboard/keyboard.h"
+#include "usb_device.h"
 
 #include <array>
 #include <cstdint>
@@ -9,13 +10,9 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/usb/class/hid.h>
 #include <zephyr/usb/class/usbd_hid.h>
-#include <zephyr/usb/usbd.h>
 
 namespace {
 
-constexpr uint16_t kUsbVid = 0x303A;
-constexpr uint16_t kUsbPid = 0x4001;
-constexpr uint8_t kUsbMaxPower = 100 / 2;
 constexpr uint8_t kKeyboardReportSize = 8;
 
 enum ReportIndex {
@@ -28,15 +25,6 @@ struct KeyMapping {
   uint8_t modifier;
   uint8_t keycode;
 };
-
-USBD_DEVICE_DEFINE(rdb_usbd, DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)), kUsbVid,
-                   kUsbPid);
-USBD_DESC_LANG_DEFINE(rdb_lang);
-USBD_DESC_MANUFACTURER_DEFINE(rdb_mfr, "TeamIO");
-USBD_DESC_PRODUCT_DEFINE(rdb_product, "RhythmDoctorButton");
-USBD_DESC_CONFIG_DEFINE(rdb_fs_desc, "FS Configuration");
-USBD_CONFIGURATION_DEFINE(rdb_fs_config, USB_SCD_REMOTE_WAKEUP, kUsbMaxPower,
-                          &rdb_fs_desc);
 
 const uint8_t kHidKeyboardReportDescriptor[] = HID_KEYBOARD_REPORT_DESC();
 bool g_hid_ready = false;
@@ -123,60 +111,14 @@ const hid_device_ops kHidOps = {
     .output_report = HidOutputReport,
 };
 
-void UsbMessageCallback(usbd_context* const usbd_ctx, const usbd_msg* const msg) {
-  if (usbd_can_detect_vbus(usbd_ctx)) {
-    if (msg->type == USBD_MSG_VBUS_READY) {
-      if (usbd_enable(usbd_ctx) != 0) {
-        printk("Failed to enable USB device\n");
-      }
-    }
-    if (msg->type == USBD_MSG_VBUS_REMOVED) {
-      if (usbd_disable(usbd_ctx) != 0) {
-        printk("Failed to disable USB device\n");
-      }
-    }
-  }
-}
-
-usbd_context* SetupUsbDevice() {
-  int ret = usbd_add_descriptor(&rdb_usbd, &rdb_lang);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_add_descriptor(&rdb_usbd, &rdb_mfr);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_add_descriptor(&rdb_usbd, &rdb_product);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_add_configuration(&rdb_usbd, USBD_SPEED_FS, &rdb_fs_config);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_register_all_classes(&rdb_usbd, USBD_SPEED_FS, 1, nullptr);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_msg_register_cb(&rdb_usbd, UsbMessageCallback);
-  if (ret != 0) {
-    return nullptr;
-  }
-  ret = usbd_init(&rdb_usbd);
-  if (ret != 0) {
-    return nullptr;
-  }
-  return &rdb_usbd;
-}
-
 }  // namespace
 
 namespace rdb {
 
 class UsbKeyboardImpl : public IKeyboard {
  public:
-  UsbKeyboardImpl(std::string_view device_name,
+  UsbKeyboardImpl(const device* hid_dev,
+                  std::string_view device_name,
                   std::string_view device_manufacturer);
   ~UsbKeyboardImpl() override = default;
 
@@ -199,8 +141,10 @@ class UsbKeyboardImpl : public IKeyboard {
   void RemoveKeycode(uint8_t keycode);
 };
 
-UsbKeyboardImpl::UsbKeyboardImpl(std::string_view device_name,
+UsbKeyboardImpl::UsbKeyboardImpl(const device* hid_dev,
+                                 std::string_view device_name,
                                  std::string_view device_manufacturer) {
+  hid_dev_ = hid_dev;
   ARG_UNUSED(device_name);
   ARG_UNUSED(device_manufacturer);
 }
@@ -212,7 +156,11 @@ void UsbKeyboardImpl::Begin() {
     return;
   }
 
-  hid_dev_ = DEVICE_DT_GET_ONE(zephyr_hid_device);
+  if (hid_dev_ == nullptr) {
+    printk("USB HID device is not configured\n");
+    return;
+  }
+
   if (!device_is_ready(hid_dev_)) {
     printk("USB HID device is not ready\n");
     return;
@@ -225,19 +173,13 @@ void UsbKeyboardImpl::Begin() {
     return;
   }
 
-  usbd_ctx_ = SetupUsbDevice();
+  usbd_ctx_ = rdb::SetupUsbDevice();
   if (usbd_ctx_ == nullptr) {
     printk("Failed to set up USB device\n");
     return;
   }
 
-  if (!usbd_can_detect_vbus(usbd_ctx_)) {
-    ret = usbd_enable(usbd_ctx_);
-    if (ret != 0) {
-      printk("Failed to enable USB device (%d)\n", ret);
-      return;
-    }
-  }
+  rdb::EnableUsbDevice(usbd_ctx_);
 
   initialized_ = true;
 }
@@ -248,7 +190,7 @@ void UsbKeyboardImpl::End() {
   }
 
   if (usbd_ctx_ != nullptr) {
-    (void)usbd_disable(usbd_ctx_);
+    rdb::DisableUsbDevice(usbd_ctx_);
   }
   initialized_ = false;
   g_hid_ready = false;
@@ -323,9 +265,11 @@ void UsbKeyboardImpl::ReleaseAll() {
 
 void UsbKeyboardImpl::SetBatteryLevel(uint8_t level) { ARG_UNUSED(level); }
 
-UsbKeyboard::UsbKeyboard(std::string_view device_name,
+UsbKeyboard::UsbKeyboard(const device* hid_dev,
+                         std::string_view device_name,
                          std::string_view device_manufacturer)
-    : impl_(std::make_unique<UsbKeyboardImpl>(device_name,
+    : impl_(std::make_unique<UsbKeyboardImpl>(hid_dev,
+                                              device_name,
                                               device_manufacturer)) {}
 
 UsbKeyboard::~UsbKeyboard() = default;

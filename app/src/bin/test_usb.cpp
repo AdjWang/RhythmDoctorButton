@@ -1,10 +1,11 @@
 #include "keyboard/keyboard.h"
+#include "keyboard/usb_device.h"
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
 int main() {
-  rdb::UsbKeyboard keyboard("RDB USB Test", "TeamIO");
+  rdb::UsbKeyboard keyboard(rdb::GetUsbHidDevice(), "RDB USB Test", "TeamIO");
   keyboard.Begin();
 
   while (true) {

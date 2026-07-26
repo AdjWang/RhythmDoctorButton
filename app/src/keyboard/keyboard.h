@@ -7,6 +7,8 @@
 #include <memory>
 #include <string_view>
 
+struct device;
+
 namespace rdb {
 
 class IKeyboard {
@@ -44,7 +46,8 @@ class UsbKeyboardImpl;
 
 class UsbKeyboard : public IKeyboard {
  public:
-  UsbKeyboard(std::string_view device_name,
+  UsbKeyboard(const device* hid_dev,
+              std::string_view device_name,
               std::string_view device_manufacturer);
   ~UsbKeyboard() override;
   bool is_connected() const override;

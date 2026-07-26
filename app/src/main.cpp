@@ -11,6 +11,7 @@
 #include "battery_adc.h"
 #include "button.h"
 #include "keyboard/keyboard.h"
+#include "keyboard/usb_device.h"
 #include "light.h"
 
 static constexpr std::string_view kDeviceName = "RhythmDoctorButton";
@@ -105,7 +106,8 @@ void Setup() {
   ble_keyboard->Begin();
 
   usb_keyboard =
-      std::make_unique<rdb::UsbKeyboard>(kDeviceName, kDeviceManufacturer);
+      std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice(), kDeviceName,
+                                         kDeviceManufacturer);
   usb_keyboard->Begin();
 }
 
