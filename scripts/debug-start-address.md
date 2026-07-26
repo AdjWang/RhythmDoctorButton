@@ -166,6 +166,66 @@ Interpretation:
 - the bootloader/SoftDevice layout could no longer reliably start the app
 - therefore the Zephyr CDC ACM app did not enumerate as `/dev/ttyACM1`
 
+## Why These Addresses Were Checked
+
+These three addresses are quick probes for the nice!nano/S140 boot layout:
+
+```text
+0x00003004
+0x00003008
+0x10001014
+```
+
+`0x00003004` and `0x00003008` are in the Nordic SoftDevice information area.
+The bootloader uses this area to recognize that a SoftDevice is present and to
+find the application start address.
+
+Expected values for `nice_nano_bootloader-0.11.0_s140_6.1.1.hex`:
+
+```text
+0x00003004: 51b1e5db
+0x00003008: 00026000
+```
+
+Meaning:
+
+- `0x3004 = 0x51b1e5db`: SoftDevice information magic is valid.
+- `0x3008 = 0x00026000`: the application starts at `0x26000`.
+
+When the board was broken, the values were:
+
+```text
+0x00003004: bf00bd08
+0x00003008: 20001a34
+```
+
+Those look like application/vector/instruction data, not SoftDevice metadata.
+That was the evidence that an app image had overwritten the SoftDevice info
+area. Once this happens, the bootloader can no longer reliably determine the
+SoftDevice/app boundary, so it does not start the Zephyr app and `/dev/ttyACM1`
+does not appear.
+
+`0x10001014` is in UICR, Nordic's nonvolatile configuration register area. For
+this bootloader, it stores the bootloader start address:
+
+```text
+0x10001014: 000f4000
+```
+
+Meaning:
+
+- the bootloader address is still `0xf4000`
+- UICR was not the broken part
+- the failure was SoftDevice metadata corruption, not a missing bootloader
+
+Short interpretation table:
+
+```text
+0x3004     Is SoftDevice metadata valid?
+0x3008     Does SoftDevice say the app starts at 0x26000?
+0x10001014 Is the bootloader address still 0xf4000?
+```
+
 ## CMSIS-DAP Failure
 
 While trying to recover with OpenOCD, the DAPLink/CMSIS-DAP clone also became
@@ -330,4 +390,3 @@ For SWD flashing on this board, the reliable path is:
 ```sh
 RESTORE_BOOTLOADER=1 scripts/flash_app_swd.sh
 ```
-
