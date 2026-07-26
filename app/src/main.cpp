@@ -38,7 +38,7 @@ rdb::IKeyboard* keyboard = nullptr;
 rdb::Button boot_btn(kBootButton);
 rdb::Button main_btn(kMainButton);
 rdb::BatteryAdc bat_adc(kBatteryAdc);
-rdb::Light bkg_led(kBkgLed, true);
+rdb::Light bkg_led(kBkgLed);
 rdb::Light key_led(kKeyLed);
 rdb::LightFlasher advertising_flash;
 

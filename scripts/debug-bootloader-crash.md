@@ -390,3 +390,98 @@ For SWD flashing on this board, the reliable path is:
 ```sh
 RESTORE_BOOTLOADER=1 scripts/flash_app_swd.sh
 ```
+
+## Cold Power-Up Failure: DCDC Regulator Mode
+
+After the SoftDevice/app-start metadata was fixed, a second failure remained:
+the board could sit in the bootloader or fail to start the Zephyr app after a
+cold USB power-up, but the app would start after pyOCD/SWD interacted with the
+chip.
+
+This matches Zephyr issue #28061:
+
+```text
+https://github.com/zephyrproject-rtos/zephyr/issues/28061
+```
+
+In that issue, the reported nRF52840 symptom was:
+
+- the application did not boot after power plug-in
+- connecting a debugger/RTT viewer caused it to start
+- the final workaround was disabling the board's default DCDC regulator mode
+
+For current Zephyr, this setting is controlled through devicetree regulator
+mode instead of the old `CONFIG_BOARD_ENABLE_DCDC` Kconfig option.
+
+The project now has:
+
+```text
+app/boards/promicro_nrf52840_nrf52840_uf2.overlay
+```
+
+with:
+
+```dts
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
+};
+```
+
+Generated DTS confirms the overlay is active:
+
+```text
+reg1: regulator@40000578 {
+	compatible = "nordic,nrf5x-regulator";
+	regulator-initial-mode = < 0x0 >;
+};
+```
+
+`0x0` is `NRF5X_REG_MODE_LDO`. This disables the problematic initial DCDC
+mode for this custom/nice!nano-like board. The reason this fits the board swap
+test is that the same cold-start failure appeared even on the no-crystal board
+after flashing the new Zephyr application, so the external 32.768 kHz crystal
+is not the only suspect.
+
+The remaining verification step is physical:
+
+1. Build with the `promicro_nrf52840/nrf52840/uf2` target.
+2. Flash the app with `scripts/flash_app_swd.sh`, not `zephyr.hex`.
+3. Fully remove USB power from the target board.
+4. Reconnect USB without using pyOCD.
+5. Check whether the P0.02 LED heartbeat starts and whether the app USB device
+   appears as `303a:4010 TeamIO RDB CDC Console`.
+
+If this succeeds, the root cause of the cold power-up problem was DCDC mode.
+If it still fails, the next things to inspect are:
+
+- `RESETREAS`
+- retained RAM double-reset marker at `0x20007f7c`
+- `GPREGRET`
+- P0.18 reset/bootloader-entry hardware state
+- SoftDevice metadata at `0x3004` and `0x3008`
+
+Host-side verification after rebuilding and flashing with the LDO overlay:
+
+```text
+lsusb:
+303a:4010 TeamIO RDB CDC Console
+
+/dev/serial/by-id:
+usb-TeamIO_RDB_CDC_Console_030DBB121B45BB55-if00 -> ../../ttyACM1
+```
+
+Opening `/dev/ttyACM1` produced:
+
+```text
+uart test alive 0
+uart test alive 1
+uart test alive 2
+uart test alive 3
+uart test alive 4
+```
+
+This proves that the rebuilt app runs after the pyOCD/SWD flash/reset path.
+The cold USB power-up test still requires unplugging and replugging the target
+board without pyOCD interaction.

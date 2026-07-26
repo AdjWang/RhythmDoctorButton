@@ -21,6 +21,9 @@ pyocd flash -t nrf52840 -f "${swd_khz}k" -e sector --format bin \
   --base-address "${app_offset}" --no-reset "${app_bin}"
 
 pyocd commander -t nrf52840 -f "${swd_khz}k" \
+  -c 'halt' \
+  -c 'write32 0x20007f7c 0x00000000' \
+  -c 'write32 0x40000400 0xffffffff' \
   -c 'write32 0x4000051c 0x0000006d' \
   -c 'write32 0x40000520 0x00000000' \
   -c 'reset' \

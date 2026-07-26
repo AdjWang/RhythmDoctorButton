@@ -1,3 +1,5 @@
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
+
 / {
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
@@ -15,11 +17,6 @@
 
 	buttons {
 		compatible = "gpio-keys";
-
-		boot_btn: boot_btn {
-			gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
-			label = "Boot button";
-		};
 
 		main_btn: main_btn {
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
@@ -44,11 +41,15 @@
 	};
 
 	aliases {
-		boot-btn = &boot_btn;
 		main-btn = &main_btn;
 		bkg-led = &bkg_led;
 		key-led = &key_led;
 	};
+};
+
+// https://github.com/zephyrproject-rtos/zephyr/issues/28061
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_LDO>;
 };
 
 &flash0 {
