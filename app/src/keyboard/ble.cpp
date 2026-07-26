@@ -49,6 +49,15 @@ static bool should_retry_advertising(int err) {
   return err == -EAGAIN || err == -ENOMEM;
 }
 
+static void clear_peer_bond(struct bt_conn *conn) {
+  int err = bt_unpair(BT_ID_DEFAULT, bt_conn_get_dst(conn));
+  if (err == 0) {
+    printk("BLE stale peer bond cleared\n");
+  } else {
+    printk("BLE stale peer bond clear failed (err %d)\n", err);
+  }
+}
+
 static void schedule_advertising_retry(int err) {
   printk("BLE advertising retry scheduled (err %d)\n", err);
   k_work_reschedule(&adv_restart_work, K_MSEC(250));
@@ -115,6 +124,9 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
   if (err != BT_SECURITY_ERR_SUCCESS) {
     printk("BLE security failed (level %u, err %s/%u)\n", level,
            bt_security_err_to_str(err), err);
+    if (err == BT_SECURITY_ERR_AUTH_REQUIREMENT) {
+      clear_peer_bond(conn);
+    }
     return;
   }
 
@@ -135,6 +147,9 @@ static void pairing_complete(struct bt_conn *conn, bool bonded) {
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason) {
   printk("BLE pairing failed: %s reason %s/%u\n", bt_conn_dst_str(conn),
          bt_security_err_to_str(reason), reason);
+  if (reason == BT_SECURITY_ERR_AUTH_REQUIREMENT) {
+    clear_peer_bond(conn);
+  }
 }
 
 static struct bt_conn_auth_info_cb auth_info_callbacks = {
