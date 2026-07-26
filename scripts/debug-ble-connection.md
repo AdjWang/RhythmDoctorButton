@@ -27,6 +27,8 @@ SWD readback showed:
 - UICR `0x10001014` still contained `0x000f4000`, so the bootloader start address was correct.
 - The CPU was running inside the Zephyr app flash range.
 - After halting with pyOCD, the PC was inside `k_sys_fatal_error_handler`.
+  > `pyocd commander -t nrf52840 -c "halt" -c "reg" -c "exit"`
+  > where pc insides k_sys_fatal_error_handler and r0 is 2
 - Fatal reason register argument was `2`, which maps to `K_ERR_STACK_CHK_FAIL` in `zephyr/include/zephyr/fatal_types.h`.
 
 So the app was reaching Zephyr, overflowing a stack, and entering the fatal handler before USB CDC had time to enumerate. From Linux this looked like "no ttyACM app device", but the direct cause was early firmware death.
@@ -73,23 +75,3 @@ Fix:
 - Added targeted stale-bond cleanup in `app/src/keyboard/ble.cpp`: on `BT_SECURITY_ERR_AUTH_REQUIREMENT`, call `bt_unpair(BT_ID_DEFAULT, bt_conn_get_dst(conn))`.
 - Rebuilt and copied the UF2 through the bootloader filesystem.
 - Verified CDC returned and serial output showed the BLE app connected and sending reports.
-
-## Current known-good flashing method
-
-Do not use `scripts/flash_app_swd.sh` for the app image in this bootloader flow.
-
-Use UF2:
-
-```sh
-uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=ble
-cp build/zephyr/zephyr.uf2 /media/adjwang/NICENANO/zephyr.uf2
-sync
-```
-
-If the app is running as CDC and the bootloader volume is not mounted, the 1200-baud touch worked:
-
-```sh
-stty -F /dev/ttyACM1 1200 hupcl
-```
-
-Then copy the UF2 to the `NICENANO` filesystem.
