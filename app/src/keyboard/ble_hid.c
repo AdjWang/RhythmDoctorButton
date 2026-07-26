@@ -2,6 +2,9 @@
 
 #include <zephyr/sys/printk.h>
 
+#define HIDS_INPUT_PERM_READ BT_GATT_PERM_READ_ENCRYPT
+#define HIDS_INPUT_PERM_WRITE BT_GATT_PERM_WRITE_ENCRYPT
+
 struct bt_conn *my_connection; //bluetooth connection reference struct
 
 /********************
@@ -328,12 +331,12 @@ BT_GATT_SERVICE_DEFINE(my_service,
     //HID Input Report for KeyBoard
     BT_GATT_CHARACTERISTIC(NRF52_CHAR_HIDREPORT_UUID,
                             BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-                            BT_GATT_PERM_READ,
+                            HIDS_INPUT_PERM_READ,
                             readreport_cb, NULL,
                             (hids_report_info_t*)&input_rep_info),
     
     BT_GATT_CCC(input_rep_changed,  //Client Characteristic Configuration Descriptor - Enable/Disable of Notification
-        BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+        HIDS_INPUT_PERM_READ | HIDS_INPUT_PERM_WRITE),
     
     BT_GATT_DESCRIPTOR(BT_UUID_HIDS_REPORT_REF,
                         BT_GATT_PERM_READ,
@@ -348,12 +351,12 @@ BT_GATT_SERVICE_DEFINE(my_service,
     //HID Boot Mouse Input Report
     BT_GATT_CHARACTERISTIC(NRF52_CHAR_HIDBOOTREPORT_UUID,
                             BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
-                            BT_GATT_PERM_READ,
+                            HIDS_INPUT_PERM_READ,
                             readreport_cb, NULL,
                             (hids_report_info_t*)&boot_input_rep_info),
     
     BT_GATT_CCC(boot_input_rep_changed,  //Client Characteristic Configuration Descriptor - Enable/Disable of Notification
-            BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+            HIDS_INPUT_PERM_READ | HIDS_INPUT_PERM_WRITE),
     
 );
 

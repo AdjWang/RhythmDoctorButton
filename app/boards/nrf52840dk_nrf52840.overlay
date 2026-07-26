@@ -102,6 +102,14 @@
 	};
 };
 
+&qspi {
+	status = "disabled";
+};
+
+&mx25r64 {
+	status = "disabled";
+};
+
 &adc {
 	status = "okay";
 	#address-cells = <1>;

@@ -28,6 +28,7 @@ hids_report_kb_t make_report(uint8_t key) {
 }
 
 static bool g_bt_ready = false;
+static bool g_auth_info_registered = false;
 
 static void restart_advertising(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(adv_restart_work, restart_advertising);
@@ -92,6 +93,11 @@ static void connected(struct bt_conn *conn, uint8_t err) {
 
   printk("BLE connected\n");
   hids_connected(conn);
+
+  err = bt_conn_set_security(conn, BT_SECURITY_L2);
+  if (err != 0) {
+    printk("BLE security request failed (err %d)\n", err);
+  }
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason) {
@@ -107,7 +113,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
                              enum bt_security_err err) {
   ARG_UNUSED(conn);
   if (err != BT_SECURITY_ERR_SUCCESS) {
-    printk("BLE security failed (level %u, err %u)\n", level, err);
+    printk("BLE security failed (level %u, err %s/%u)\n", level,
+           bt_security_err_to_str(err), err);
     return;
   }
 
@@ -119,6 +126,36 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
   .disconnected = disconnected,
   .security_changed = security_changed,
 };
+
+static void pairing_complete(struct bt_conn *conn, bool bonded) {
+  printk("BLE pairing complete: %s bonded=%u\n", bt_conn_dst_str(conn),
+         bonded ? 1 : 0);
+}
+
+static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason) {
+  printk("BLE pairing failed: %s reason %s/%u\n", bt_conn_dst_str(conn),
+         bt_security_err_to_str(reason), reason);
+}
+
+static struct bt_conn_auth_info_cb auth_info_callbacks = {
+  .pairing_complete = pairing_complete,
+  .pairing_failed = pairing_failed,
+};
+
+static void register_auth_info_callbacks(void) {
+  if (g_auth_info_registered) {
+    return;
+  }
+
+  int err = bt_conn_auth_info_cb_register(&auth_info_callbacks);
+  if (err != 0) {
+    printk("BLE auth info callback registration failed (err %d)\n", err);
+    return;
+  }
+
+  g_auth_info_registered = true;
+  printk("BLE auth info callbacks registered\n");
+}
 
 static void bt_ready(int err) {
   if (err != 0) {
@@ -171,6 +208,7 @@ bool BleKeyboardImpl::is_connected() const {
 
 void BleKeyboardImpl::Begin() {
   if (!g_bt_ready) {
+    register_auth_info_callbacks();
     int err = bt_enable(bt_ready);
     if (err != 0) {
       printk("BLE enable failed (err %d)\n", err);
