@@ -142,12 +142,14 @@
 &pinctrl {
 	pwm0_default: pwm0_default {
 		group1 {
+			nordic,invert;
 			psels = <NRF_PSEL(PWM_OUT0, 0, 2)>;
 		};
 	};
 
 	pwm0_sleep: pwm0_sleep {
 		group1 {
+			nordic,invert;
 			psels = <NRF_PSEL(PWM_OUT0, 0, 2)>;
 			low-power-enable;
 		};
@@ -155,12 +157,14 @@
 
 	pwm1_default: pwm1_default {
 		group1 {
+			nordic,invert;
 			psels = <NRF_PSEL(PWM_OUT0, 0, 12)>;
 		};
 	};
 
 	pwm1_sleep: pwm1_sleep {
 		group1 {
+			nordic,invert;
 			psels = <NRF_PSEL(PWM_OUT0, 0, 12)>;
 			low-power-enable;
 		};
