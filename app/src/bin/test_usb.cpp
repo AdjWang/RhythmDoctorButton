@@ -5,7 +5,7 @@
 #include <zephyr/sys/printk.h>
 
 int main() {
-  rdb::UsbKeyboard keyboard(rdb::GetUsbHidDevice(), "RDB USB Test", "TeamIO");
+  rdb::UsbKeyboard keyboard(rdb::GetUsbHidDevice());
   keyboard.Begin();
 
   while (true) {

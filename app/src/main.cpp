@@ -14,8 +14,6 @@
 #include "keyboard/usb_device.h"
 #include "light.h"
 
-static constexpr std::string_view kDeviceName = "RhythmDoctorButton";
-static constexpr std::string_view kDeviceManufacturer = "TeamIO";
 static constexpr float kBkgLedFlashBrightness = 0.01f;
 static constexpr float kKeyLedFlashBrightness = 0.3f;
 static constexpr uint32_t kMainLoopDelayMs = 10;
@@ -23,8 +21,6 @@ static constexpr uint32_t kBatLevelReportDurationMs = 1000;
 
 namespace {
 
-constexpr gpio_dt_spec kBootButton =
-    GPIO_DT_SPEC_GET(DT_ALIAS(boot_btn), gpios);
 constexpr gpio_dt_spec kMainButton =
     GPIO_DT_SPEC_GET(DT_ALIAS(main_btn), gpios);
 constexpr pwm_dt_spec kBkgLed = PWM_DT_SPEC_GET(DT_ALIAS(bkg_led));
@@ -36,7 +32,6 @@ std::unique_ptr<rdb::IKeyboard> ble_keyboard;
 std::unique_ptr<rdb::IKeyboard> usb_keyboard;
 rdb::IKeyboard* keyboard = nullptr;
 
-rdb::Button boot_btn(kBootButton);
 rdb::Button main_btn(kMainButton);
 rdb::BatteryAdc bat_adc(kBatteryAdc);
 rdb::Light bkg_led(kBkgLed);
@@ -75,7 +70,9 @@ void OnMainButtonRelease() {
   }
 }
 
-void EnableAdvertisingFlash() { advertising_flash.Reset(); }
+void EnableAdvertisingFlash() {
+  advertising_flash.Reset();
+}
 
 void DisableAdvertisingFlash() {
   advertising_flash.Reset();
@@ -84,10 +81,6 @@ void DisableAdvertisingFlash() {
 }
 
 void Setup() {
-  boot_btn.Begin();
-  boot_btn.set_on_press(OnMainButtonPress);
-  boot_btn.set_on_release(OnMainButtonRelease);
-
   main_btn.Begin();
   main_btn.set_on_press(OnMainButtonPress);
   main_btn.set_on_release(OnMainButtonRelease);
@@ -101,20 +94,17 @@ void Setup() {
       {false, 1400},
   });
 
-  ble_keyboard =
-      std::make_unique<rdb::BleKeyboard>(kDeviceName, kDeviceManufacturer);
+  ble_keyboard = std::make_unique<rdb::BleKeyboard>(
+      CONFIG_BT_DEVICE_NAME, CONFIG_BT_DIS_MANUF_NAME_STR);
   ble_keyboard->Begin();
 
-  usb_keyboard =
-      std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice(), kDeviceName,
-                                         kDeviceManufacturer);
+  usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
   usb_keyboard->Begin();
 }
 
 void Loop() {
   const uint32_t now_ms = static_cast<uint32_t>(k_uptime_get());
 
-  boot_btn.Update();
   main_btn.Update();
   bat_adc.Update();
 

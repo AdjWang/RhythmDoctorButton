@@ -117,9 +117,7 @@ namespace rdb {
 
 class UsbKeyboardImpl : public IKeyboard {
  public:
-  UsbKeyboardImpl(const device* hid_dev,
-                  std::string_view device_name,
-                  std::string_view device_manufacturer);
+  explicit UsbKeyboardImpl(const device* hid_dev);
   ~UsbKeyboardImpl() override = default;
 
   bool is_connected() const override;
@@ -141,13 +139,7 @@ class UsbKeyboardImpl : public IKeyboard {
   void RemoveKeycode(uint8_t keycode);
 };
 
-UsbKeyboardImpl::UsbKeyboardImpl(const device* hid_dev,
-                                 std::string_view device_name,
-                                 std::string_view device_manufacturer) {
-  hid_dev_ = hid_dev;
-  ARG_UNUSED(device_name);
-  ARG_UNUSED(device_manufacturer);
-}
+UsbKeyboardImpl::UsbKeyboardImpl(const device* hid_dev) : hid_dev_(hid_dev) {}
 
 bool UsbKeyboardImpl::is_connected() const { return initialized_ && g_hid_ready; }
 
@@ -265,12 +257,8 @@ void UsbKeyboardImpl::ReleaseAll() {
 
 void UsbKeyboardImpl::SetBatteryLevel(uint8_t level) { ARG_UNUSED(level); }
 
-UsbKeyboard::UsbKeyboard(const device* hid_dev,
-                         std::string_view device_name,
-                         std::string_view device_manufacturer)
-    : impl_(std::make_unique<UsbKeyboardImpl>(hid_dev,
-                                              device_name,
-                                              device_manufacturer)) {}
+UsbKeyboard::UsbKeyboard(const device* hid_dev)
+    : impl_(std::make_unique<UsbKeyboardImpl>(hid_dev)) {}
 
 UsbKeyboard::~UsbKeyboard() = default;
 

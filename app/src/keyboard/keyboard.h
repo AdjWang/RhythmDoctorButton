@@ -46,9 +46,7 @@ class UsbKeyboardImpl;
 
 class UsbKeyboard : public IKeyboard {
  public:
-  UsbKeyboard(const device* hid_dev,
-              std::string_view device_name,
-              std::string_view device_manufacturer);
+  explicit UsbKeyboard(const device* hid_dev);
   ~UsbKeyboard() override;
   bool is_connected() const override;
   void Begin() override;
