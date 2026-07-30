@@ -13,13 +13,13 @@ uv run west packages pip | xargs uv pip install
 ## Build
 
 ```
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=main
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=uart
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=pwm_led
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=key
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=adc
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=usb
-uv run west build -p always -b promicro_nrf52840/nrf52840/uf2 app -- -DAPP_BIN=ble
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=main
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=uart
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=pwm_led
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=key
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=adc
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=usb
+uv run west build -p always -b nrf52840dk/nrf52840 app -- -DAPP_BIN=ble
 ```
 
 ## Flash program
