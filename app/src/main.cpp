@@ -14,8 +14,8 @@
 #include "keyboard/usb_device.h"
 #include "light.h"
 
-static constexpr float kBkgLedFlashBrightness = 0.01f;
-static constexpr float kKeyLedFlashBrightness = 0.3f;
+static constexpr float kBkgLedFlashBrightness = 0.08f;
+static constexpr float kKeyLedFlashBrightness = 0.2f;
 static constexpr uint32_t kMainLoopDelayMs = 10;
 static constexpr uint32_t kBatLevelReportDurationMs = 1000;
 
@@ -94,12 +94,12 @@ void Setup() {
       {false, 1400},
   });
 
+  usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
+  usb_keyboard->Begin();
+
   ble_keyboard = std::make_unique<rdb::BleKeyboard>(
       CONFIG_BT_DEVICE_NAME, CONFIG_BT_DIS_MANUF_NAME_STR);
   ble_keyboard->Begin();
-
-  usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
-  usb_keyboard->Begin();
 }
 
 void Loop() {
