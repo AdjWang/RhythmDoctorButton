@@ -171,7 +171,10 @@ void UsbKeyboardImpl::Begin() {
     return;
   }
 
-  rdb::EnableUsbDevice(usbd_ctx_);
+  // Disable usb to reduce current if usb is not plugged in.
+  if (!usbd_can_detect_vbus(usbd_ctx_)) {
+    rdb::EnableUsbDevice(usbd_ctx_);
+  }
 
   initialized_ = true;
 }

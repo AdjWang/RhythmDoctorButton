@@ -25,6 +25,7 @@ bool g_usbd_enabled = false;
 void UsbMessageCallback(usbd_context* const usbd_ctx,
                         const usbd_msg* const msg) {
   if (usbd_can_detect_vbus(usbd_ctx)) {
+    // Disable usb to reduce current if usb is not plugged in.
     if (msg->type == USBD_MSG_VBUS_READY) {
       rdb::EnableUsbDevice(usbd_ctx);
     }
