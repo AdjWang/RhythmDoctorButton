@@ -48,34 +48,13 @@ RESTORE_BOOTLOADER=1 scripts/flash_app_swd.sh
 
 ## Flash bootloader
 
-<!-- The factory bootloader currently reports:
-
-```
-UF2 Bootloader 0.6.0
-Model: nice!nano
-Board-ID: nRF52840-nicenano
-SoftDevice: not found
-Date: Jun 19 2021
-```
-
-Normal UF2 flashing does not use the bootloader file in `scripts/`. Because
-this factory bootloader reports `SoftDevice: not found`, the app is linked with
-`CONFIG_FLASH_LOAD_OFFSET=0x1000`.
-
-Only run these commands when intentionally replacing or recovering the
-bootloader:
-
-```
-nrfutil device recover
-nrfutil device program --firmware ./scripts/nice_nano_bootloader-0.6.0_s140_6.1.1.hex
-```
-
-> Install [nrfutil](https://www.nordicsemi.com/Products/Development-tools/nRF-Util/Download)
-
-> Install tools: `nrfutil install device`
-
-> List jlink devices: `nrfutil device list` -->
-
 ```
 pyocd flash -t nrf52840 -f 1M -e chip --format hex scripts/nice_nano_bootloader-0.11.0_s140_6.1.1.hex
 ```
+
+## Power consomption
+
+- BLE connected, idle: 0.96 mA
+- BLE connected, all leds on: 35.75 mA
+- BLE advertising, without led: 1.27 mA
+
