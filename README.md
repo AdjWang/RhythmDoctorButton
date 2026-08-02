@@ -1,7 +1,7 @@
 # Rhythm Doctor Button
 
 <p align="center">
-  <img src="pictures/rdb-longhand-mirror.png" alt="Mirrored ingame snapshot" width="40%"><img src="pictures/overview.jpg" alt="Button overview" width="20%"><img src="pictures/rdb-longhand.png" alt="Ingame snapshot" width="40%">
+  <img src="pictures/preview/rdb-longhand-mirror.png" alt="Mirrored ingame snapshot" width="40%"><img src="pictures/preview/overview.jpg" alt="Button overview" width="20%"><img src="pictures/preview/rdb-longhand.png" alt="Ingame snapshot" width="40%">
 </p>
 
 一个来自[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)的按钮：
@@ -32,5 +32,5 @@
 <h1 align="center">好了，废话不多说，Rhythm Doctor, 启动！</h1>
 
 <p align="center">
-  <img src="pictures/rdb-button.gif" alt="Rhythm Doctor button animation">
+  <img src="pictures/preview/rdb-button.gif" alt="Rhythm Doctor button animation">
 </p>
