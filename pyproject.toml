@@ -1,9 +1,0 @@
-[project]
-name = "rhythmdoctorbutton-nrf52840"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
-    "west>=1.5.0",
-]
