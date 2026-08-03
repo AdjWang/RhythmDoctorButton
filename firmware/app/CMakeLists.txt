@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, pwm_led, adc, usb, ble, key")
+set(APP_BIN "main" CACHE STRING "Application binary to build: main, uart, cmd, storage, pwm_led, adc, usb, ble, key")
 
 if(APP_BIN STREQUAL "main" OR APP_BIN STREQUAL "usb")
   # Composed device of cdc usb and usb hid.
@@ -18,6 +18,8 @@ if(APP_BIN STREQUAL "main")
     src/main.cpp
     src/battery_adc.cpp
     src/button.cpp
+    src/cmd.cpp
+    src/setting.cpp
     src/light.cpp
     src/keyboard/ble.cpp
     src/keyboard/ble_hid.c
@@ -26,6 +28,10 @@ if(APP_BIN STREQUAL "main")
   )
 elseif(APP_BIN STREQUAL "uart")
   target_sources(app PRIVATE src/bin/test_uart.cpp)
+elseif(APP_BIN STREQUAL "cmd")
+  target_sources(app PRIVATE src/bin/test_cmd.cpp src/cmd.cpp src/setting.cpp)
+elseif(APP_BIN STREQUAL "storage")
+  target_sources(app PRIVATE src/bin/test_storage.cpp)
 elseif(APP_BIN STREQUAL "pwm_led")
   target_sources(app PRIVATE src/bin/test_pwm_led.cpp src/light.cpp)
 elseif(APP_BIN STREQUAL "key")
