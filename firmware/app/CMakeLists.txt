@@ -15,7 +15,7 @@ project(RhythmDoctorButton)
 
 if(APP_BIN STREQUAL "main")
   target_sources(app PRIVATE
-    src/main.cpp
+    src/bin/main.cpp
     src/battery_adc.cpp
     src/button.cpp
     src/cmd.cpp
