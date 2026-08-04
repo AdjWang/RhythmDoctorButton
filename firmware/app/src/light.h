@@ -25,9 +25,10 @@ class Light {
 
 class LightFlasher {
  public:
-  using Pattern = std::pair<float /*brightness*/, uint32_t /*duration_ms*/>;
+  using Pattern =
+      std::pair<float /*brightness_ratio*/, uint32_t /*duration_ms*/>;
 
-  float get_brightness() const { return current_brightness_; }
+  float get_brightness_ratio() const { return current_ratio_; }
   void SetPattern(const std::vector<Pattern>& pattern);
   void Reset();
   // Update frequency controls granularity.
@@ -37,7 +38,7 @@ class LightFlasher {
   std::vector<Pattern> pattern_;
   uint32_t pattern_start_time_ms_ = 0;
   size_t current_pattern_index_ = 0;
-  float current_brightness_ = 0.0f;
+  float current_ratio_ = 0.0f;
 };
 
 }  // namespace rdb

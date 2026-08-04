@@ -25,11 +25,8 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console),
 namespace {
 static constexpr uint32_t kMainLoopDelayMs = 10;
 static constexpr uint32_t kBatLevelReportDurationMs = 1000;
-
-static std::vector<rdb::LightFlasher::Pattern> advertise_flash_pattern{
-    {1.0f, 100},
-    {0.0f, 1400},
-};
+// Force advertising flash even when led is configured off.
+static constexpr float kAdvertisingFlashBrightness = 0.5f;
 
 constexpr gpio_dt_spec kMainButton =
     GPIO_DT_SPEC_GET(DT_ALIAS(main_btn), gpios);
@@ -183,8 +180,10 @@ void Setup() {
   bat_adc.Begin();
   bkg_led.Begin();
   key_led.Begin();
-  // Force advertising flash even when led is configured off.
-  advertising_flash.SetPattern(advertise_flash_pattern);
+  advertising_flash.SetPattern({
+      {1.0f, 100},
+      {0.0f, 1400},
+  });
   usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
   usb_keyboard->Begin();
   ble_keyboard = std::make_unique<rdb::BleKeyboard>(
@@ -226,7 +225,8 @@ void Loop() {
     }
     // Flashing to show advertising state.
     advertising_flash.Update(now_ms);
-    key_led.SetBrightness(advertising_flash.get_brightness());
+    key_led.SetBrightness(kAdvertisingFlashBrightness *
+                          advertising_flash.get_brightness_ratio());
   }
 }
 

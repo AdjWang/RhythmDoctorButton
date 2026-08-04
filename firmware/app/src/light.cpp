@@ -39,19 +39,19 @@ void LightFlasher::SetPattern(const std::vector<Pattern>& pattern) {
 void LightFlasher::Reset() {
   current_pattern_index_ = 0;
   pattern_start_time_ms_ = 0;
-  current_brightness_ = 0.0f;
+  current_ratio_ = 0.0f;
 }
 
 bool LightFlasher::Update(uint32_t current_time_ms) {
   if (pattern_.empty()) {
-    current_brightness_ = 0.0f;
-    return current_brightness_;
+    current_ratio_ = 0.0f;
+    return current_ratio_;
   }
   // Start pattern.
   if (pattern_start_time_ms_ == 0) {
     pattern_start_time_ms_ = current_time_ms;
-    current_brightness_ = pattern_[0].first;
-    return current_brightness_;
+    current_ratio_ = pattern_[0].first;
+    return current_ratio_;
   }
   // Progress pattern.
   const uint32_t elapsed_ms = current_time_ms - pattern_start_time_ms_;
@@ -60,14 +60,14 @@ bool LightFlasher::Update(uint32_t current_time_ms) {
     accumulated_ms += pattern_[i].second;
     if (elapsed_ms < accumulated_ms) {
       current_pattern_index_ = i;
-      current_brightness_ = pattern_[i].first;
-      return current_brightness_;
+      current_ratio_ = pattern_[i].first;
+      return current_ratio_;
     }
   }
   pattern_start_time_ms_ = current_time_ms;
   current_pattern_index_ = 0;
-  current_brightness_ = pattern_[0].first;
-  return current_brightness_;
+  current_ratio_ = pattern_[0].first;
+  return current_ratio_;
 }
 
 }  // namespace rdb
