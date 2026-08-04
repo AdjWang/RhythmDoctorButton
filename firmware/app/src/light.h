@@ -29,7 +29,7 @@ class LightFlasher {
       std::pair<float /*brightness_ratio*/, uint32_t /*duration_ms*/>;
 
   float get_brightness_ratio() const { return current_ratio_; }
-  void SetPattern(const std::vector<Pattern>& pattern, bool loop = true);
+  void SetPattern(const std::vector<Pattern>& pattern, bool loop);
   void Reset();
   // Update frequency controls granularity.
   bool Update(uint32_t current_time_ms);
