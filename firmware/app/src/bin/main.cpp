@@ -44,6 +44,7 @@ rdb::BatteryAdc bat_adc(kBatteryAdc);
 rdb::Light bkg_led(kBkgLed);
 rdb::Light key_led(kKeyLed);
 rdb::LightFlasher advertising_flash;
+rdb::LightFlasher bkg_flash;
 rdb::AppSettings& app_settings = rdb::AppSettings::Instance();
 rdb::CmdParser cmd_parser;
 const device* console = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
@@ -141,8 +142,8 @@ void UpdateCommands() {
 void OnMainButtonPress() {
   printk("Press button\n");
   if (app_settings.values().enable_led) {
-    bkg_led.SetBrightness(app_settings.values().bkg_led_brightness);
     key_led.SetBrightness(app_settings.values().key_led_brightness);
+    bkg_flash.Reset();
   }
   if (keyboard != nullptr && keyboard->is_connected()) {
     keyboard->Press(' ');
@@ -151,7 +152,6 @@ void OnMainButtonPress() {
 
 void OnMainButtonRelease() {
   printk("Release button\n");
-  bkg_led.SetBrightness(0.0f);
   key_led.SetBrightness(0.0f);
   if (keyboard != nullptr && keyboard->is_connected()) {
     keyboard->Release(' ');
@@ -181,9 +181,15 @@ void Setup() {
   bkg_led.Begin();
   key_led.Begin();
   advertising_flash.SetPattern({
-      {1.0f, 100},
-      {0.0f, 1400},
-  });
+      {1.0f, 100},    // fully on for 100ms
+      {0.0f, 1400},   // fully off for 1400ms
+  }, /*loop*/ true);
+  bkg_flash.SetPattern({
+      {1.0f, 40},
+      {0.7f, 20},
+      {0.3f, 20},
+      {0.0f, 10},
+  }, /*loop*/ false);
   usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
   usb_keyboard->Begin();
   ble_keyboard = std::make_unique<rdb::BleKeyboard>(
@@ -193,8 +199,11 @@ void Setup() {
 
 void Loop() {
   const uint32_t now_ms = static_cast<uint32_t>(k_uptime_get());
+  // Receive setting commands.
   UpdateCommands();
+  // Update button state.
   main_btn.Update();
+  // Send battery level.
   bat_adc.Update();
   if (now_ms - last_report_time_ms > kBatLevelReportDurationMs) {
     last_report_time_ms = now_ms;
@@ -203,7 +212,7 @@ void Loop() {
       ble_keyboard->SetBatteryLevel(level);
     }
   }
-
+  // Select keyboard.
   if (usb_keyboard != nullptr && usb_keyboard->is_connected()) {
     if (keyboard != usb_keyboard.get()) {
       keyboard = usb_keyboard.get();
@@ -223,11 +232,15 @@ void Loop() {
       InspectKeyboardMode();
       EnableAdvertisingFlash();
     }
-    // Flashing to show advertising state.
+    // Flash key led to show advertising state.
     advertising_flash.Update(now_ms);
     key_led.SetBrightness(kAdvertisingFlashBrightness *
                           advertising_flash.get_brightness_ratio());
   }
+  // Flash background led.
+  bkg_flash.Update(now_ms);
+  bkg_led.SetBrightness(app_settings.values().bkg_led_brightness *
+                        bkg_flash.get_brightness_ratio());
 }
 
 }  // namespace
