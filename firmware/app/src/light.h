@@ -25,18 +25,19 @@ class Light {
 
 class LightFlasher {
  public:
-  using Pattern = std::pair<bool, uint32_t>;
+  using Pattern = std::pair<float /*brightness*/, uint32_t /*duration_ms*/>;
 
-  bool is_on() const { return current_state_; }
+  float get_brightness() const { return current_brightness_; }
   void SetPattern(const std::vector<Pattern>& pattern);
   void Reset();
+  // Update frequency controls granularity.
   bool Update(uint32_t current_time_ms);
 
  private:
   std::vector<Pattern> pattern_;
   uint32_t pattern_start_time_ms_ = 0;
   size_t current_pattern_index_ = 0;
-  bool current_state_ = false;
+  float current_brightness_ = 0.0f;
 };
 
 }  // namespace rdb

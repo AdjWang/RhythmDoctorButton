@@ -22,10 +22,14 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console),
                                 zephyr_cdc_acm_uart),
              "Console device must be a USB CDC ACM UART");
 
+namespace {
 static constexpr uint32_t kMainLoopDelayMs = 10;
 static constexpr uint32_t kBatLevelReportDurationMs = 1000;
 
-namespace {
+static std::vector<rdb::LightFlasher::Pattern> advertise_flash_pattern{
+    {1.0f, 100},
+    {0.0f, 1400},
+};
 
 constexpr gpio_dt_spec kMainButton =
     GPIO_DT_SPEC_GET(DT_ALIAS(main_btn), gpios);
@@ -179,10 +183,8 @@ void Setup() {
   bat_adc.Begin();
   bkg_led.Begin();
   key_led.Begin();
-  advertising_flash.SetPattern({
-      {true, 100},
-      {false, 1400},
-  });
+  // Force advertising flash even when led is configured off.
+  advertising_flash.SetPattern(advertise_flash_pattern);
   usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
   usb_keyboard->Begin();
   ble_keyboard = std::make_unique<rdb::BleKeyboard>(
@@ -222,12 +224,9 @@ void Loop() {
       InspectKeyboardMode();
       EnableAdvertisingFlash();
     }
+    // Flashing to show advertising state.
     advertising_flash.Update(now_ms);
-    float key_led_brightness = 0.0f;
-    if (app_settings.values().enable_led && advertising_flash.is_on()) {
-      key_led_brightness = app_settings.values().key_led_brightness;
-    }
-    key_led.SetBrightness(key_led_brightness);
+    key_led.SetBrightness(advertising_flash.get_brightness());
   }
 }
 
