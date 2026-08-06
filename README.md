@@ -4,17 +4,17 @@
   <img src="pictures/preview/rdb-longhand-mirror.png" alt="Mirrored ingame snapshot" width="40%"><img src="pictures/preview/overview.jpg" alt="Button overview" width="20%"><img src="pictures/preview/rdb-longhand.png" alt="Ingame snapshot" width="40%">
 </p>
 
-一个来自[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)的按钮：
+一个用来玩[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)的按钮：
 
 - Type-C 有线 + 蓝牙双模键盘。
 - 理论最长待机 34 天。
-- 热插拔凯华 5 脚机械轴。
+- 热插拔 5 脚机械轴。
 - 模拟游戏按钮灯光。
 
 ## 配置
 
 - NRF52840 主控。
-- 800 mAh 锂电池，带两级过充 / 过放保护。
+- 800 mAh 锂电池。
 - 凯华 BOX 知秋轴。
 - 1 颗轴体 LED，12 颗背光 LED。
 - 磁吸底盖，带防滑脚垫。
