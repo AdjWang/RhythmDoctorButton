@@ -6,7 +6,7 @@
 
 一个用来玩[节奏医生](https://store.steampowered.com/app/774181/Rhythm_Doctor/)的按钮：
 
-- Type-C 有线 + 蓝牙双模键盘。
+- Type-C 有线 + 蓝牙双模键盘，只有空格。
 - 理论最长待机 34 天。
 - 热插拔 5 脚机械轴。
 - 模拟游戏按钮灯光。
