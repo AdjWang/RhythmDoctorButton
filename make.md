@@ -4,7 +4,7 @@
 
 ## 电路
 
-使用[立创 `EDA`](https://lceda.cn/)绘制，电路图 `DRC` 生成 `1` 个电源网络短接警告，`PCB` `DRC` 生成多个板载天线的连接和间距警告，均可忽略，希望软件后续版本可以妥善处理这些场景。
+使用[嘉立创 `EDA`](https://lceda.cn/)绘制，电路图 `DRC` 生成 `1` 个电源网络短接警告，`PCB` `DRC` 生成多个板载天线的连接和间距警告，均可忽略，希望软件后续版本可以妥善处理这些场景。
 
 <p align="center">
   <img src="pictures/make/SCH_Schematic1_1-P1_2026-08-03.svg" alt="Schematic">
@@ -47,13 +47,13 @@
 
 ## 外壳
 
+外壳使用 `Fusion 360` 绘制，分为三部分：按钮盖，壳体和底盖。委托[嘉立创 3D 打印](https://www.jlc-3dp.cn/)代加工，使用光固化 3D 打印工艺，按钮盖选用 `JLC` 全彩树脂，颜色 `RGB 245,14,22`；壳体和底盖选用 `8228` 浅绿色树脂，打磨。
+
 除壳体外的材料：
 
 - 碳钢 `M2*5` 螺栓 `3`个。
 - 圆柱形磁铁，直径 `4 mm`，高度 `8 mm` `3` 个。
 - 半球形硅胶防滑垫 `6*2mm` `3` 个。
-
-外壳使用 `Fusion 360` 绘制，分为三部分：按钮，壳体和底座。使用光固化 3D 打印制作。
 
 <p align="center">
   <img src="pictures/make/model-splited.jpg" alt="Model splited" width="50%"><img src="pictures/make/model-unified.jpg" alt="Model unified" width="50%">
@@ -65,13 +65,13 @@
   <img src="pictures/make/tap.jpg" alt="Tap" width="50%"><img src="pictures/make/tapping.jpg" alt="Tapping" width="50%">
 </p>
 
-把圆柱磁铁安装到底座的空位里。磁铁孔位做成通孔，方便拆卸磁铁。
+把圆柱磁铁安装到底盖的空位里。磁铁孔位做成通孔，方便拆卸磁铁。
 
 <p align="center">
   <img src="pictures/make/button-base-magnet.jpg" alt="Magnet" width="50%"><img src="pictures/make/button-base-front.jpg" alt="Added view" width="50%">
 </p>
 
-给底座贴装防滑硅胶垫。
+给底盖贴装防滑硅胶垫。
 
 <p align="center">
   <img src="pictures/make/button-base-back.jpg" alt="Add anti-slip pad" width="70%">
