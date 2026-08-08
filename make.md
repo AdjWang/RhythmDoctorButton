@@ -97,7 +97,10 @@ Rhythm Doctor, 启动！
 
 <p align="center">
   <img src="pictures/make/rhythmdoctor-overview.jpg" alt="Rhythm Doctor overview">
-  <img src="pictures/preview/rdb-longhand.png" alt="Rhythm Doctor button animation">
+</p>
+
+<p align="center">
+  <img src="pictures/make/rdb-unpressed.png" alt="Ingame unpressed snapshot" width="50%"><img src="pictures/make/rdb-pressed.png" alt="Ingame pressed snapshot" width="50%">
 </p>
 
 <p align="center">
