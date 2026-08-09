@@ -30,15 +30,16 @@ class LightFlasher {
 
   float get_brightness_ratio() const { return current_ratio_; }
   void SetPattern(const std::vector<Pattern>& pattern, bool loop);
-  void Reset();
+  // Input index can be lower than 0 to count from end to start.
+  void Reset(int idx = 0);
   // Update frequency controls granularity.
-  bool Update(uint32_t current_time_ms);
+  void Update(uint32_t current_time_ms);
 
  private:
   std::vector<Pattern> pattern_;
   bool loop_ = true;
   uint32_t pattern_start_time_ms_ = 0;
-  size_t current_pattern_index_ = 0;
+  size_t current_pattern_idx_ = 0;
   float current_ratio_ = 0.0f;
 };
 

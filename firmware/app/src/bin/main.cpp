@@ -164,7 +164,6 @@ void EnableAdvertisingFlash() {
 
 void DisableAdvertisingFlash() {
   advertising_flash.Reset();
-  bkg_led.SetBrightness(0.0f);
   key_led.SetBrightness(0.0f);
 }
 
@@ -190,6 +189,8 @@ void Setup() {
       {0.3f, 20},
       {0.0f, 10},
   }, /*loop*/ false);
+  // Initialize as closed.
+  bkg_flash.Reset(-1);
   usb_keyboard = std::make_unique<rdb::UsbKeyboard>(rdb::GetUsbHidDevice());
   usb_keyboard->Begin();
   ble_keyboard = std::make_unique<rdb::BleKeyboard>(
