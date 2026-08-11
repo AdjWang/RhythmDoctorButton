@@ -57,32 +57,27 @@ uint8_t BatteryAdc::ReadBatteryLevel() {
       .buffer = &raw_value,
       .buffer_size = sizeof(raw_value),
   };
-
   int ret = adc_sequence_init_dt(&adc_, &sequence);
   if (ret != 0) {
     printk("Failed to initialize battery ADC sequence (%d)\n", ret);
     return 0;
   }
-
   ret = adc_read_dt(&adc_, &sequence);
   if (ret != 0) {
     printk("Battery ADC read failed (%d)\n", ret);
     return 0;
   }
-
   int32_t adc_mv = raw_value;
   ret = adc_raw_to_millivolts_dt(&adc_, &adc_mv);
   if (ret != 0) {
     printk("Battery ADC conversion failed (%d)\n", ret);
     return 0;
   }
-
   const auto battery_mv =
       static_cast<uint32_t>(static_cast<float>(adc_mv) / kSampleRatio);
   if (battery_mv < kBatteryMinVoltageMv) {
     return 0;
   }
-
   float ratio =
       static_cast<float>(battery_mv - kBatteryMinVoltageMv) /
       static_cast<float>(kBatteryMaxVoltageMv - kBatteryMinVoltageMv);

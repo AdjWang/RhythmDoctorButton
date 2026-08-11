@@ -18,10 +18,14 @@ class BatteryAdc {
 
  private:
   static constexpr size_t kBatterySampleCount = 20;
-  static constexpr uint32_t kBatteryMinVoltageMv = 3700;
-  static constexpr uint32_t kBatteryMaxVoltageMv = 4200;
-  static constexpr uint32_t kBatterySampleFreqHz = 3;
   static constexpr float kSampleRatio = 220.0f / (220.0f + 330.0f);
+  // kSampleRatio error of 1% is 0.0048
+  // Shrink sample range to cover resistor error.
+  static constexpr uint32_t kBatteryMinVoltageMv =
+      static_cast<uint32_t>(3000.0 * (1.0 + 0.0048));
+  static constexpr uint32_t kBatteryMaxVoltageMv =
+      static_cast<uint32_t>(4200.0 * (1.0 - 0.0048));
+  static constexpr uint32_t kBatterySampleFreqHz = 3;
 
   adc_dt_spec adc_;
   bool initialized_ = false;
