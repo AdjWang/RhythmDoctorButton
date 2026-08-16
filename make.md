@@ -47,7 +47,7 @@
 
 ## 外壳
 
-外壳使用 `Fusion 360` 绘制，分为三部分：按钮盖，壳体和底盖。委托[嘉立创 3D 打印](https://www.jlc-3dp.cn/)代加工，使用光固化 3D 打印工艺，按钮盖选用 `JLC` 全彩树脂，颜色 `RGB 245,14,22`；壳体和底盖选用 `8228` 浅绿色树脂，打磨。
+外壳使用 `Fusion 360` 绘制，分为四部分：上盖，按钮盖，壳体和底盖。委托[嘉立创 3D 打印](https://www.jlc-3dp.cn/)代加工，使用光固化 3D 打印工艺，上盖选用 `8001` 透明树脂，喷油；按钮盖选用 `JLC` 全彩树脂，颜色 `RGB 245,14,22`；壳体和底盖选用 `8228` 浅绿色树脂，打磨。
 
 除壳体外的材料：
 
@@ -56,7 +56,7 @@
 - 半球形硅胶防滑垫 `6*2mm` `3` 个。
 
 <p align="center">
-  <img src="pictures/make/model-splited.jpg" alt="Model splited" width="50%"><img src="pictures/make/model-unified.jpg" alt="Model unified" width="50%">
+  <img src="pictures/make/model-unified.jpg" alt="Model unified" width="50%"><img src="pictures/make/model-splited.jpg" alt="Model splited" width="50%">
 </p>
 
 壳体上有 `3` 个 `M2` 螺栓孔，需要手动攻丝。因为底座的磁铁需要吸附到螺栓，所以螺栓材质一定要使用强磁性的，比如碳钢，不能用弱磁性材料，比如不锈钢。
@@ -86,6 +86,12 @@
 <p align="center">
   <img src="pictures/make/button-bottom.jpg" alt="Buttom view" width="50%"><img src="pictures/make/button-key.jpg" alt="Key view" width="50%">
 </p>
+
+<p align="center">
+  <img src="pictures/make/button-final1.jpg" alt="Buttom final view without lid" width="50%"><img src="pictures/make/button-final2.jpg" alt="Button final view with lid" width="50%">
+</p>
+
+按钮整体高度略高，一直抬着手腕不是很舒服，所以上盖设计高度 `2.4cm`，玩的时候用来当托腕，平时当防尘盖。
 
 扫描蓝牙设备，连接 `RhythmDoctorButton`，也可以不用蓝牙，直接用有线连接。如果同时连接，使用有线传输数据。
 
